@@ -10,40 +10,28 @@ import RealityKit
 import RealityKitContent
 
 struct ContentView: View {
-
-    @State var enlarge = false
-
     var body: some View {
-        VStack {
-            RealityView { content in
-                // Add the initial RealityKit content
-                if let scene = try? await Entity(named: "Scene", in: realityKitContentBundle) {
-                    content.add(scene)
-                }
-            } update: { content in
-                // Update the RealityKit content when SwiftUI state changes
-                if let scene = content.entities.first {
-                    let uniformScale: Float = enlarge ? 1.4 : 1.0
-                    scene.transform.scale = [uniformScale, uniformScale, uniformScale]
-                }
-            }
-            .gesture(TapGesture().targetedToAnyEntity().onEnded { _ in
-                enlarge.toggle()
-            })
-
-            VStack {
-                Button {
-                    enlarge.toggle()
-                } label: {
-                    Text(enlarge ? "Reduce RealityView Content" : "Enlarge RealityView Content")
-                }
-                .animation(.none, value: 0)
-                .fontWeight(.semibold)
-            }
-            .padding()
-            .glassBackgroundEffect()
+        let MagShapes = loadMagFile(at: "inverter")
+        let NormShapes = normalizeShapesCoordinates(shapes: MagShapes, low: 0, high: 10)
+        RealityView { content in
+            addMagShapes(to: content, shapeElements: NormShapes)
         }
     }
+
+    func addMagShapes(to content: RealityViewContent, shapeElements: [Shape]) {
+        
+        for shapeElement in shapeElements {
+            let width = shapeElement.coordinates[2] - shapeElement.coordinates[0]
+            let height = shapeElement.coordinates[3] - shapeElement.coordinates[1]
+            let gds_block = ModelEntity(mesh: .generateBox(width: width, height: height, depth: 1))
+            
+            gds_block.position.z = shapeElement.coordinates[0]
+            gds_block.position.y = shapeElement.coordinates[1]
+
+            content.add(gds_block)
+        }
+    }
+    
 }
 
 #Preview(windowStyle: .volumetric) {
